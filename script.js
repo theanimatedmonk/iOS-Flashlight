@@ -1,19 +1,19 @@
 
-function getBrightness(x, y) {
-  const cx = 150, cy = 190; // center coordinates
-  const r = Math.sqrt((x - cx) ** 2 + (y - cy) ** 2); // distance from center
+function getBrightness(y) {
+  const cy = 190; // center Y coordinate
+  const verticalDistance = Math.abs(y - cy); // distance from center Y
   
   let brightness;
-  if (r <= 0) {
+  if (verticalDistance <= 0) {
     brightness = 0;
-  } else if (r >= 120) {
+  } else if (verticalDistance >= 120) {
     brightness = 100;
   } else {
-    // Linear interpolation between known points
-    brightness = (r / 120) * 100;
+    // Linear interpolation: distance from center Y determines brightness
+    brightness = (verticalDistance / 120) * 100;
   }
   
-  //console.log(`📍 Position: x=${x}, y=${y}, distance=${r.toFixed(2)}, brightness=${brightness.toFixed(2)}%`);
+  //console.log(`📍 Y Position: ${y}, center: ${cy}, distance: ${verticalDistance.toFixed(2)}, brightness: ${brightness.toFixed(2)}%`);
   return brightness;
 }
 
@@ -50,15 +50,14 @@ const riveInstance = new rive.Rive({
     riveInstance.bindViewModelInstance(vmi);
 
     // Get number properties
-    const propX = vmi.number("x-coordinate");
     const propY = vmi.number("y-coordinate");
     const propBrightness = vmi.number("brightness");
     
     // Get boolean property for flashlight switch
     const propSwitch = vmi.boolean("switch");
 
-    if (!propX || !propY || !propBrightness) {
-      console.error("❌ Could not access number properties (x-coordinate, y-coordinate, brightness)");
+    if (!propY || !propBrightness) {
+      console.error("❌ Could not access number properties (y-coordinate, brightness)");
       //console.log("Available number properties:", vmi.numberNames);
       return;
     }
@@ -69,11 +68,10 @@ const riveInstance = new rive.Rive({
       return;
     }
 
-    // Function to recompute brightness based on position
+    // Function to recompute brightness based on Y position
     const recompute = () => {
-      const x = propX.value;
       const y = propY.value;
-      const brightnessVal = getBrightness(x, y);
+      const brightnessVal = getBrightness(y);
       propBrightness.value = brightnessVal;
     };
     
@@ -83,8 +81,7 @@ const riveInstance = new rive.Rive({
       console.log(`💡 Flashlight: ${isOn ? 'ON' : 'OFF'}`);
     };
 
-    // Subscribe to position changes
-    propX.on(() => recompute());
+    // Subscribe to Y position changes
     propY.on(() => recompute());
     
     // Subscribe to switch changes
@@ -94,7 +91,7 @@ const riveInstance = new rive.Rive({
     recompute();
     logSwitchState();
 
-    console.log("✅ iOS Flashlight data binding active");
+    console.log("✅ iOS Flashlight data binding active (Y-coordinate only)");
   },
   onError: (err) => {
     console.error("❌ Rive loading error:", err);
@@ -104,5 +101,6 @@ const riveInstance = new rive.Rive({
     console.log("3. Verify the state machine name is 'flashlight'");
     console.log("4. Check that the view model name is 'iOS flashlight'");
     console.log("5. Ensure the instance name is 'my instance'");
+    console.log("6. Verify y-coordinate property exists in Rive");
   },
 });
